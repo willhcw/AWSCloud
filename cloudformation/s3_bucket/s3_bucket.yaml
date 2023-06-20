@@ -1,0 +1,138 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+    A Stack that deploys S3 bucket
+
+Metadata: 
+  Authors:
+    Description: Will Hu (johndoe@example.com)
+
+  Purpose:
+    Description: "
+      This CloudFormation template creates an S3 bucket with customizable options. 
+      You can specify the bucket name and choose whether to enable versioning. 
+      Additionally, the template enforces public access restrictions on the bucket."
+
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "S3 Bucket Configuration"
+        Parameters:
+          - BucketName
+          - EnableVersioning
+      - Label:
+          default: "Public Access Configuration"
+        Parameters:
+          - BlockPublicAcls
+          - BlockPublicPolicy
+          - IgnorePublicAcls
+          - RestrictPublicBuckets
+    ParameterLabels:
+      BucketName:
+        default: "S3 Bucket Name"
+      EnableVersioning:
+        default: "Enable Versioning"
+      BlockPublicAcls:
+        default: "Block Public ACLs"
+      BlockPublicPolicy:
+        default: "Block Public Bucket Policies"
+      IgnorePublicAcls:
+        default: "Ignore Public ACLs"
+      RestrictPublicBuckets:
+        default: "Restrict Public Bucket Policies"
+    Usage:
+      'Fn::Sub': |
+        This CloudFormation template creates an S3 bucket with configurable options.
+
+        To create the S3 bucket, provide the following parameters:
+        - **S3 Bucket Name**: Enter a unique name for the S3 bucket.
+        - **Enable Versioning**: Choose whether to enable versioning for the S3 bucket.
+        - **Block Public ACLs**: Choose whether to block public ACLs for the S3 bucket.
+        - **Block Public Bucket Policies**: Choose whether to block public bucket policies for the S3 bucket.
+        - **Ignore Public ACLs**: Choose whether to ignore public ACLs for the S3 bucket.
+        - **Restrict Public Bucket Policies**: Choose whether to restrict public bucket policies for the S3 bucket.
+
+        After providing the parameters, deploy the CloudFormation stack to create the S3 bucket with the specified configuration.
+      
+Parameters: 
+  BucketName: 
+    Type: String
+    Description: S3 Bucket Name
+    AllowedPattern: "^([a-z0-9]{1}[a-z0-9-]{1,61}[a-z0-9]{1})$"
+  EnableVersioning:
+    Type: String
+    Description: Enable versioning for the S3 bucket (true/false)
+      - "True"
+      - "False"
+    Default: "False"
+  BlockPublicAcls:
+    Type: String
+    Description: Block public ACLs for the S3 bucket (true/false)
+    AllowedValues: 
+      - "True"
+      - "False"
+    Default: "True"
+  BlockPublicPolicy:
+    Type: String
+    Description: Block public bucket policies for the S3 bucket (true/false)
+    AllowedValues: 
+      - "True"
+      - "False"
+    Default: "True"
+  IgnorePublicAcls:
+    Type: String
+    Description: Ignore public ACLs for the S3 bucket (true/false)
+    AllowedValues: 
+      - "True"
+      - "False"
+    Default: "True"
+  RestrictPublicBuckets:
+    Type: String
+    Description: Restrict public bucket policies for the S3 bucket (true/false)
+    AllowedValues: 
+      - "True"
+      - "False"
+    Default: "True"
+
+Conditions:
+  isEnableVersioning: !Equals [ "True", !Ref EnableVersioning ]
+  isBlockPublicAcls: !Equals [ "True", !Ref BlockPublicAcls ]
+  isBlockPublicPolicy: !Equals [ "True", !Ref BlockPublicPolicy ]
+  isIgnorePublicAcls: !Equals [ "True", !Ref IgnorePublicAcls ]
+  isRestrictPublicBuckets: !Equals [ "True", !Ref RestrictPublicBuckets ]
+
+Resources: 
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+      VersioningConfiguration:
+        Status: !If
+          - isEnableVersioning
+          - 'Enabled'
+          - 'Suspended'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: !If
+          - isBlockPublicAcls
+          - true
+          - false
+        BlockPublicPolicy: !If
+          - isBlockPublicPolicy
+          - true
+          - false
+        IgnorePublicAcls: !If
+          - isIgnorePublicAcls
+          - true
+          - false
+        RestrictPublicBuckets: !If
+          - isRestrictPublicBuckets
+          - true
+          - false
+
+
+Outputs:
+  S3BucketURL:
+    Description: S3 Bucket URL
+    Value: !Sub "https://${BucketName}.s3.amazonaws.com"
+  S3BucketARN:
+    Description: S3 Bucket ARN
+    Value: !GetAtt S3Bucket.Arn
